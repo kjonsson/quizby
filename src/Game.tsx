@@ -5,6 +5,10 @@ import { shuffle, sum, unescape } from "lodash";
 const QUIZ_API_BASE_URL = "https://opentdb.com/api.php";
 const NUMBER_OF_QUESTIONS = 5;
 
+const BACKGROUND_COLOR = "rgb(26, 26, 26)";
+const QUESTION_BACKGROUND_COLOR = "rgb(38, 38, 38)";
+const BUTTON_COLOR = "rgb(80, 70, 230)";
+
 const getQuestions = async (numberOfQuestions: number) => {
   const res = await fetch(
     `https://opentdb.com/api.php?amount=${numberOfQuestions}&category=9&type=multiple`
@@ -28,17 +32,28 @@ const Question = ({
 
   return (
     <div className="py-4">
-      <div>{unescape(question.question)}</div>
-      <div>Correct answer is {question.correct_answer}</div>
-      <div>
+      <div className="pb-2 text-gray-300">Question {questionNumber + 1}</div>
+      <div className="pb-2 text-2xl text-white">
+        {unescape(question.question)}
+      </div>
+      <div className="flex flex-col">
         {answers.map((answer) => (
-          <span
-            className="px-2 mx-2 border border-red-500 hover:cursor-pointer"
-            onClick={() => onClickAnswer(answer, questionNumber)}
-          >
-            {" "}
-            {answer}{" "}
-          </span>
+          <div className="flex max-w-lg items-center rounded border border-gray-700 pl-4">
+            <input
+              id="bordered-radio-1"
+              type="radio"
+              value=""
+              name="bordered-radio"
+              className="h-4 w-4 border-gray-600 bg-gray-700 text-blue-600  ring-offset-gray-800 focus:ring-blue-600"
+              onClick={() => onClickAnswer(answer, questionNumber)}
+            />
+            <label
+              htmlFor="bordered-radio-1"
+              className="ml-2 w-full py-4 text-sm font-medium text-white"
+            >
+              {answer}
+            </label>
+          </div>
         ))}
       </div>
     </div>
@@ -61,7 +76,11 @@ const Game = () => {
   }, []);
 
   if (!(questions.length > 0)) {
-    return <div>Loading ...</div>;
+    return (
+      <div className="min-h-full w-full bg-gray-800 px-4 text-white">
+        Loading ...
+      </div>
+    );
   }
 
   const handleClickAnswer = (answer: string, questionNumber: number) => {
@@ -71,22 +90,7 @@ const Game = () => {
   };
 
   return (
-    <div>
-      <div>
-        Score:{" "}
-        {sum(
-          answers.map(
-            (answer, answerIdx) =>
-              answer === questions[answerIdx].correct_answer
-          )
-        )}
-        Answers:{" "}
-        {answers.map((answer, idx) => (
-          <span>
-            {idx} - {answer}
-          </span>
-        ))}
-      </div>
+    <div className="min-h-full w-full bg-gray-800 px-4">
       {questions.map((question, questionIdx) => (
         <Question
           question={question}

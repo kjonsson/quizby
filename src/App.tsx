@@ -6,7 +6,7 @@ const App = () => {
 
   if (!isPlaying) {
     return (
-      <div className="h-full w-full flex flex-col items-center justify-center">
+      <div className="flex h-full  min-h-full w-full flex-col items-center justify-center bg-gray-800 px-4">
         <div>TODO SET SETTINGS</div>
         <button
           onClick={() => {
