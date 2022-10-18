@@ -42,7 +42,7 @@ const Question = ({
   }, [question]);
 
   return (
-    <div className="py-4">
+    <div className="w-full max-w-2xl py-4">
       <div className="pb-2 text-gray-300">Question {questionNumber + 1}</div>
       <div
         className="pb-2 text-2xl text-white"
@@ -50,7 +50,7 @@ const Question = ({
       ></div>
       <div className="flex flex-col">
         {answers.map((answer) => (
-          <div className="flex max-w-lg items-center rounded border border-gray-700 pl-4">
+          <div className="flex items-center rounded border border-gray-700 pl-4">
             <input
               id="bordered-radio-1"
               type="radio"
@@ -100,14 +100,16 @@ const Game = () => {
   };
 
   return (
-    <div className="min-h-full w-full bg-gray-800 px-4">
-      {questions.map((question, questionIdx) => (
-        <Question
-          question={question}
-          onClickAnswer={handleClickAnswer}
-          questionNumber={questionIdx}
-        />
-      ))}
+    <div className="min-h-full w-full   bg-gray-800 px-4">
+      <div className="flex min-h-full w-full   flex-col items-center justify-center bg-gray-800 px-4 py-16">
+        {questions.map((question, questionIdx) => (
+          <Question
+            question={question}
+            onClickAnswer={handleClickAnswer}
+            questionNumber={questionIdx}
+          />
+        ))}
+      </div>
     </div>
   );
 };
