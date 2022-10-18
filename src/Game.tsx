@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Question as QuestionType } from "./types";
 import { shuffle, sum, unescape } from "lodash";
+import sanitizeHtml from "sanitize-html";
 
 const QUIZ_API_BASE_URL = "https://opentdb.com/api.php";
 const NUMBER_OF_QUESTIONS = 5;
@@ -15,6 +16,16 @@ const getQuestions = async (numberOfQuestions: number) => {
   );
   const data = (await res.json()) as { results: QuestionType[] };
   return data.results;
+};
+
+const decodeHtmlEntity = (input: string) => {
+  const output = input.replace(/&#(\d+);/g, (match, dec) => {
+    return String.fromCharCode(dec);
+  });
+
+  console.log(input, "vs", output);
+
+  return output;
 };
 
 const Question = ({
@@ -33,9 +44,10 @@ const Question = ({
   return (
     <div className="py-4">
       <div className="pb-2 text-gray-300">Question {questionNumber + 1}</div>
-      <div className="pb-2 text-2xl text-white">
-        {unescape(question.question)}
-      </div>
+      <div
+        className="pb-2 text-2xl text-white"
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(question.question) }}
+      ></div>
       <div className="flex flex-col">
         {answers.map((answer) => (
           <div className="flex max-w-lg items-center rounded border border-gray-700 pl-4">
@@ -47,12 +59,10 @@ const Question = ({
               className="h-4 w-4 border-gray-600 bg-gray-700 text-blue-600  ring-offset-gray-800 focus:ring-blue-600"
               onClick={() => onClickAnswer(answer, questionNumber)}
             />
-            <label
-              htmlFor="bordered-radio-1"
+            <div
               className="ml-2 w-full py-4 text-sm font-medium text-white"
-            >
-              {answer}
-            </label>
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(answer) }}
+            ></div>
           </div>
         ))}
       </div>
