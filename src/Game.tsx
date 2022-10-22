@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Question as QuestionType } from "./types";
+import { QuestionType, QuestionResponseType } from "./types";
 import { shuffle } from "lodash";
 import sanitizeHtml from "sanitize-html";
 
@@ -9,170 +9,131 @@ const getQuestions = async (numberOfQuestions: number) => {
   const res = await fetch(
     `https://opentdb.com/api.php?amount=${numberOfQuestions}&category=9&type=multiple`
   );
-  const data = (await res.json()) as { results: QuestionType[] };
+  const data = (await res.json()) as { results: QuestionResponseType[] };
   return data.results;
 };
 
-const Question = ({
-  onClickAnswer,
-  question,
-  questionNumber,
-  currentAnswer,
-}: {
-  onClickAnswer: (answer: string, questionNumber: number) => void;
-  question: QuestionType;
-  questionNumber: number;
-  currentAnswer: string;
-}) => {
-  const answers = useMemo(() => {
-    return shuffle([...question.incorrect_answers, question.correct_answer]);
-  }, [question]);
+const useQuestions = ({ questionNumber }: { questionNumber: number }) => {
+  const [questions, setQuestions] = useState<QuestionType[]>([]);
 
-  return (
-    <div className="w-full max-w-2xl py-4">
-      <div className="pb-2 text-gray-300">Question {questionNumber + 1}</div>
-      <div
-        className="pb-2 text-2xl text-white"
-        dangerouslySetInnerHTML={{ __html: sanitizeHtml(question.question) }}
-      ></div>
-      <div className="flex flex-col">
-        {answers.map((answer) => (
-          <div
-            className="my-2 flex items-center rounded border border-gray-700 bg-gray-800 pl-4 hover:cursor-pointer"
-            onClick={() => onClickAnswer(answer, questionNumber)}
-          >
-            <input
-              type="radio"
-              checked={currentAnswer === answer}
-              className="h-4 w-4 border-gray-600 bg-gray-700 ring-offset-gray-800 "
-              readOnly
-            />
-            <div
-              className="ml-2 w-full py-4 text-sm font-medium text-white"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(answer) }}
-            ></div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
+  useEffect(() => {
+    getQuestions(100).then((questions) => {
+      const newQuestions = questions.map((question) => {
+        return {
+          answerOptions: shuffle([
+            ...question.incorrect_answers.map((v) => ({
+              isCorrect: false,
+              text: v,
+            })),
+            { isCorrect: true, text: question.correct_answer },
+          ]),
+          question: question.question,
+          answer: "",
+          confirmed: false,
+        };
+      });
+      setQuestions(newQuestions);
+    });
+  }, []);
 
-enum GAME_STATES {
-  NOT_STARTED,
-  PLAYING,
-  GAME_OVER,
-}
+  const answerQuestion = (questionNumber: number, answer: string) => {
+    if (!answer) {
+      return;
+    }
 
-const Questions = ({
-  answers,
-  handleClickAnswer,
-  handleClickEndGame,
-  questions,
-}: {
-  answers: string[];
-  handleClickAnswer: (answer: string, questionNumber: number) => void;
-  handleClickEndGame: () => void;
-  questions: QuestionType[];
-}) => {
-  return (
-    <div className="flex min-h-full w-full   flex-col items-center justify-center px-4 py-16">
-      {questions.map((question, questionIdx) => (
-        <Question
-          key={questionIdx}
-          question={question}
-          onClickAnswer={handleClickAnswer}
-          questionNumber={questionIdx}
-          currentAnswer={answers[questionIdx]}
-        />
-      ))}
-      <button onClick={handleClickEndGame}>Submit</button>
-    </div>
-  );
-};
+    const newQuestions = Array.from(questions);
+    newQuestions[questionNumber].answer = answer;
+    setQuestions(newQuestions);
+  };
 
-const GameOver = ({
-  correctAnswers,
-  handleClickPlayAgain,
-  totalQuestions,
-}: {
-  correctAnswers: number;
-  handleClickPlayAgain: () => void;
-  totalQuestions: number;
-}) => {
-  return (
-    <div className="flex h-screen w-full flex-col items-center justify-center px-4 py-16 text-4xl text-white">
-      <div>
-        Answered {correctAnswers} / {totalQuestions}
-      </div>
-      <button onClick={handleClickPlayAgain}>Play again</button>
-    </div>
-  );
+  const confirmQuestion = (questionNumber: number) => {
+    if (!questions[questionNumber].answer) {
+      return;
+    }
+
+    const newQuestions = Array.from(questions);
+    newQuestions[questionNumber].confirmed = true;
+    setQuestions(newQuestions);
+  };
+
+  return { questions, answerQuestion, confirmQuestion };
 };
 
 const Game = () => {
-  const [questions, setQuestions] = useState<QuestionType[]>([]);
-  const [answers, setAnswers] = useState<string[]>([]);
-  const [gameState, setGameState] = useState<GAME_STATES>(GAME_STATES.PLAYING);
+  const [questionNumber, setQuestionNumber] = useState(1);
+  const { questions, answerQuestion, confirmQuestion } = useQuestions({
+    questionNumber,
+  });
 
-  useEffect(() => {
-    async function _getQuestions(NUMBER_OF_QUESTIONS: number) {
-      const questionsResult = await getQuestions(NUMBER_OF_QUESTIONS);
-      setQuestions(questionsResult);
-      const newAnswers = new Array(questionsResult.length).fill("");
-      setAnswers(newAnswers);
-    }
-    if (gameState === GAME_STATES.PLAYING) {
-      _getQuestions(NUMBER_OF_QUESTIONS);
-    }
-  }, [gameState]);
+  const question = questions[questionNumber];
 
-  const handleClickAnswer = (answer: string, questionNumber: number) => {
-    const newAnswers = answers.slice();
-    newAnswers[questionNumber] = answer;
-    setAnswers(newAnswers);
-  };
-
-  const handleClickEndGame = () => {
-    setGameState(GAME_STATES.GAME_OVER);
-  };
-
-  const handleClickPlayAgain = () => {
-    setQuestions([]);
-    setAnswers([]);
-    setGameState(GAME_STATES.PLAYING);
-  };
-
-  const calculateTotal = (questions: QuestionType[], answers: string[]) => {
-    let total = 0;
-
-    questions.map((question, questionIdx) => {
-      if (question.correct_answer === answers[questionIdx]) {
-        total += 1;
-      }
-    });
-
-    return total;
-  };
+  if (!question) {
+    return null;
+  }
 
   return (
     <div className="min-h-full w-full   bg-gray-900 px-4">
-      {(gameState === GAME_STATES.PLAYING ||
-        gameState === GAME_STATES.NOT_STARTED) && (
-        <Questions
-          answers={answers}
-          handleClickAnswer={handleClickAnswer}
-          handleClickEndGame={handleClickEndGame}
-          questions={questions}
-        />
-      )}
-      {gameState === GAME_STATES.GAME_OVER && (
-        <GameOver
-          correctAnswers={calculateTotal(questions, answers)}
-          totalQuestions={questions.length}
-          handleClickPlayAgain={handleClickPlayAgain}
-        />
-      )}
+      <div className="flex min-h-full w-full   flex-col items-center justify-center px-4 py-16">
+        <div className="w-full max-w-2xl py-4">
+          <div className="pb-2 text-gray-300">Question {questionNumber}</div>
+          <div
+            className="pb-2 text-2xl text-white"
+            dangerouslySetInnerHTML={{
+              __html: sanitizeHtml(question.question),
+            }}
+          ></div>
+          <div className="flex flex-col">
+            {question.answerOptions.map((answerOption) => {
+              const isSelected = question.answer === answerOption.text;
+              const isCorrect = answerOption.isCorrect;
+              const isConfirmed = question.confirmed;
+
+              let bg = "bg-gray-800";
+
+              if (isConfirmed && isCorrect) {
+                bg = "bg-green-500";
+              } else if (isSelected && !isConfirmed) {
+                bg = "bg-yellow-500";
+              } else if (isSelected && isConfirmed) {
+                bg = "bg-red-500";
+              }
+
+              return (
+                <div
+                  className={`my-2 flex items-center rounded border border-gray-700 ${bg} pl-4 hover:cursor-pointer`}
+                  onClick={() =>
+                    answerQuestion(questionNumber, answerOption.text)
+                  }
+                >
+                  <div
+                    className="ml-2 w-full py-4 text-sm font-medium text-white"
+                    dangerouslySetInnerHTML={{
+                      __html: sanitizeHtml(answerOption.text),
+                    }}
+                  ></div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex flex-col justify-items-end py-2">
+            {question.confirmed ? (
+              <button
+                className="rounded bg-blue-500 py-2 px-4 font-bold text-white hover:bg-blue-700"
+                onClick={() => setQuestionNumber(questionNumber + 1)}
+              >
+                Next
+              </button>
+            ) : (
+              <button
+                className="rounded bg-blue-500 py-2 px-4 font-bold text-white hover:bg-blue-700"
+                onClick={() => confirmQuestion(questionNumber)}
+              >
+                Check Answer
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
