@@ -100,7 +100,7 @@ const Game = () => {
 
               return (
                 <div
-                  className={`my-2 flex items-center rounded border border-gray-700 ${bg} pl-4 hover:cursor-pointer`}
+                  className={`my-2 flex items-center rounded border border-gray-700 ${bg} pl-4 transition-all hover:scale-105 hover:cursor-pointer`}
                   onClick={() =>
                     answerQuestion(questionNumber, answerOption.text)
                   }
