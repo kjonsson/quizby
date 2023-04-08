@@ -3,7 +3,7 @@ import { QuestionType, QuestionResponseType } from "./types";
 import { shuffle } from "lodash";
 import sanitizeHtml from "sanitize-html";
 
-const NUMBER_OF_QUESTIONS = 2;
+const NUMBER_OF_QUESTIONS = 10;
 
 const fetchQuestions = async (numberOfQuestions: number) => {
   const res = await fetch(
@@ -138,7 +138,10 @@ const Game = () => {
       <div className="flex min-h-full w-full items-center justify-center bg-gray-900 px-4">
         <div className="w-full max-w-2xl py-4">
           <div className="pb-2 text-center text-6xl text-white">
-            You finished! - Score {score} / {numberOfQuestions}
+            You finished!
+            <br />
+            <span className="text-3xl font-bold">Score:</span> {score} /{" "}
+            {numberOfQuestions}
           </div>
           <div className="mt-4 flex justify-center">
             <button
@@ -170,7 +173,8 @@ const Game = () => {
       <div className="flex min-h-full w-full   flex-col items-center justify-center px-4 py-16">
         <div className="w-full max-w-2xl py-4">
           <div className="pb-2 text-gray-300">
-            Question {currentQuestion.number} - Score {score}
+            Question {currentQuestion.number} of {numberOfQuestions} - Score{" "}
+            {score}
           </div>
           <div
             className="pb-2 text-2xl text-white"
