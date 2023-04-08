@@ -8,6 +8,7 @@ export interface QuestionType {
   question: string;
   answer: string;
   confirmed: boolean;
+  number: number;
 }
 
 export interface QuestionResponseType {
