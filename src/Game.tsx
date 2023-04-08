@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { QuestionType, QuestionResponseType } from "./types";
 import { shuffle } from "lodash";
 import sanitizeHtml from "sanitize-html";
 
-const NUMBER_OF_QUESTIONS = 5;
+const NUMBER_OF_QUESTIONS = 2;
 
-const getQuestions = async (numberOfQuestions: number) => {
+const fetchQuestions = async (numberOfQuestions: number) => {
   const res = await fetch(
     `https://opentdb.com/api.php?amount=${numberOfQuestions}&category=9&type=multiple`
   );
@@ -13,11 +13,12 @@ const getQuestions = async (numberOfQuestions: number) => {
   return data.results;
 };
 
-const useQuestions = ({ questionNumber }: { questionNumber: number }) => {
+const useQuestions = () => {
   const [questions, setQuestions] = useState<QuestionType[]>([]);
+  const [score, setScore] = useState(0);
 
   useEffect(() => {
-    getQuestions(100).then((questions) => {
+    fetchQuestions(NUMBER_OF_QUESTIONS).then((questions) => {
       const newQuestions = questions.map((question) => {
         return {
           answerOptions: shuffle([
@@ -54,28 +55,44 @@ const useQuestions = ({ questionNumber }: { questionNumber: number }) => {
     const newQuestions = Array.from(questions);
     newQuestions[questionNumber].confirmed = true;
     setQuestions(newQuestions);
+
+    const correctAnswer = questions[questionNumber].answerOptions.find(
+      (v) => v.isCorrect
+    )?.text;
+
+    if (correctAnswer === questions[questionNumber].answer) {
+      setScore(score + 1);
+    }
   };
 
-  return { questions, answerQuestion, confirmQuestion };
+  return { questions, answerQuestion, confirmQuestion, score };
 };
 
 const Game = () => {
-  const [questionNumber, setQuestionNumber] = useState(1);
-  const { questions, answerQuestion, confirmQuestion } = useQuestions({
-    questionNumber,
-  });
+  const [questionNumber, setQuestionNumber] = useState(0);
+  const { questions, answerQuestion, confirmQuestion, score } = useQuestions();
 
   const question = questions[questionNumber];
 
-  if (!question) {
-    return null;
+  if (questionNumber >= questions.length) {
+    return (
+      <div className="flex min-h-full w-full items-center justify-center bg-gray-900 px-4">
+        <div className="w-full max-w-2xl py-4">
+          <div className="pb-2 text-center text-6xl text-white">
+            You finished! - Score {score} / {questions.length}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-full w-full   bg-gray-900 px-4">
       <div className="flex min-h-full w-full   flex-col items-center justify-center px-4 py-16">
         <div className="w-full max-w-2xl py-4">
-          <div className="pb-2 text-gray-300">Question {questionNumber}</div>
+          <div className="pb-2 text-gray-300">
+            Question {questionNumber + 1} - Score {score}
+          </div>
           <div
             className="pb-2 text-2xl text-white"
             dangerouslySetInnerHTML={{

@@ -1,0 +1,2 @@
+### Just quickly checking how Vite works and deploy the app on <strong>Vercel</strong>.  <strong>React</strong> app with <strong>Tailwind CSS</strong> and <strong>Vite</strong>.</li>
+https://kris-quiz.vercel.app/
